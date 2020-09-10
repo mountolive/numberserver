@@ -6,7 +6,7 @@ import (
 	"runtime"
 )
 
-const LOG_FILE = ",/numbers.log"
+const LOG_FILE = "./numbers.log"
 
 type Appender interface {
 	AddToLog(ctx context.Context, path, input string) error
