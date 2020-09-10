@@ -40,6 +40,12 @@ func TestProcessor(t *testing.T) {
 				Expected: false,
 				ErrorMsg: "The number passed %s should have been %v",
 			},
+			{
+				Name:     "Non-numeric string",
+				Input:    "testing",
+				Expected: false,
+				ErrorMsg: "The string passed %s should have been %v",
+			},
 		}
 		for _, tc := range testCases {
 			t.Run(tc.Name, func(t *testing.T) {
