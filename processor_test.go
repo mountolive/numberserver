@@ -7,16 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type inputTestCase struct {
+type validateInputTestCase struct {
 	Name     string
 	Input    string
 	Expected bool
 	ErrorMsg string
 }
 
-func TestProcessor(t *testing.T) {
+func TestValidateInputNum(t *testing.T) {
 	t.Run("Validate Input Num", func(t *testing.T) {
-		testCases := []inputTestCase{
+		testCases := []validateInputTestCase{
 			{
 				Name:     "Valid Input Num 1",
 				Input:    "314159265",
@@ -27,12 +27,6 @@ func TestProcessor(t *testing.T) {
 				Name:     "Valid Input Num 2",
 				Input:    "007007009",
 				Expected: true,
-				ErrorMsg: "The number passed %s should have been %v",
-			},
-			{
-				Name:     "Incomplete number",
-				Input:    "00700700",
-				Expected: false,
 				ErrorMsg: "The number passed %s should have been %v",
 			},
 			{
@@ -57,9 +51,12 @@ func TestProcessor(t *testing.T) {
 		}
 	})
 
+}
+
+func TestCheckTermination(t *testing.T) {
 	t.Run("Check Termination", func(t *testing.T) {
 		generalErrorMsg := "The passed word %v should have prompted %v"
-		testCases := []inputTestCase{
+		testCases := []validateInputTestCase{
 			{
 				Name:     "Correct termination",
 				Input:    "terminate",
@@ -89,4 +86,5 @@ func TestProcessor(t *testing.T) {
 			})
 		}
 	})
+
 }
