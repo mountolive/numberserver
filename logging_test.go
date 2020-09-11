@@ -20,6 +20,7 @@ type processNumberCase struct {
 	Name     string
 	Canceled bool
 	Repeated bool
+	Ignored  bool
 	Inbound  int
 	Outbound int
 }
@@ -69,10 +70,12 @@ func TestNumberTracker(t *testing.T) {
 			{
 				Name:    "Ignored overflown int",
 				Inbound: 1000000000,
+				Ignored: true,
 			},
 			{
 				Name:    "Ignored negative int",
 				Inbound: -200,
+				Ignored: true,
 			},
 			{
 				Name:     "Correct new int",
@@ -87,15 +90,15 @@ func TestNumberTracker(t *testing.T) {
 		}
 		// Helper function to be used for checking
 		// outbound channel state
-		checkChan := func(outbound <-chan int) bool {
-			// If more than 2 second passes, return
-			ticker := time.Tick(time.Second * 2)
+		checkChan := func(outbound <-chan int) (bool, int) {
+			// If more than 200 millisecond passes, return
+			ticker := time.Tick(time.Millisecond * 200)
 			for {
 				select {
-				case <-outbound:
-					return false
+				case value := <-outbound:
+					return false, value
 				case <-ticker:
-					return true
+					return true, 0
 				}
 			}
 		}
@@ -105,19 +108,26 @@ func TestNumberTracker(t *testing.T) {
 				defer cancel()
 				inbound := make(chan int)
 				outbound := tracker.ProcessNumber(ctx, inbound)
-				inbound <- tc.Inbound
 				if tc.Canceled {
 					cancel()
+					inbound <- tc.Inbound
 					v, ok := <-outbound
 					assert.True(t, v == 0, genericError, v, 0)
 					assert.False(t, ok, genericError, ok, false)
 				} else {
-					received := <-outbound
+					inbound <- tc.Inbound
 					if !tc.Repeated {
-						assert.True(t, tc.Inbound == received, genericError, received, tc.Inbound)
+						timedout, received := checkChan(outbound)
+						if tc.Ignored {
+							require.True(t, timedout, "Should have timedout out (ignored int)")
+							assert.True(t, received == 0, genericError, received, 0)
+						} else {
+							assert.True(t, tc.Inbound == received, genericError, received, tc.Inbound)
+						}
 					} else {
+						<-outbound
 						inbound <- tc.Inbound
-						timedout := checkChan(outbound)
+						timedout, _ := checkChan(outbound)
 						assert.True(t, timedout, genericError, timedout, false)
 					}
 				}

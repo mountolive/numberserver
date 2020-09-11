@@ -29,7 +29,7 @@ func TestStatistics(t *testing.T) {
 			s.PrintCurrent()
 			return s.Duplicates == 0 && s.Received == 0
 		}
-		if err := quick.Check(asserter, &quick.Config{MaxCount: 100}); err != nil {
+		if err := quick.Check(asserter, &quick.Config{MaxCount: 8}); err != nil {
 			t.Error(err)
 		}
 

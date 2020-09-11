@@ -32,8 +32,24 @@ func NewNumberTracker(maxCapacity int) (*NumberTracker, error) {
 // Processes a number and passes it on to a channel
 // in a pipelined fashion
 func (n *NumberTracker) ProcessNumber(ctx context.Context,
-	input <-chan int) <-chan int {
+	inputStream <-chan int) <-chan int {
 	output := make(chan int)
-	// TODO Implement
+	go func() {
+		defer close(output)
+		for input := range inputStream {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				valid := input >= 0 && input < len(n.KnownNumbers)
+				if valid && n.KnownNumbers[input] == 0 {
+					// Marking it as seen
+					n.KnownNumbers[input] = 1
+					// passing it on
+					output <- input
+				}
+			}
+		}
+	}()
 	return output
 }
