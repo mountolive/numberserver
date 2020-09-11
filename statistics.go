@@ -14,12 +14,15 @@ type Statistics struct {
 
 // Prints to STDOUT the current statistics of the server,
 // regarding received numbers, number of duplicates and
-// total number of unique numbers received by the server
+// total number of unique numbers received by the server.
+// Resets count of Received and Duplicates after reporting
 func (s *Statistics) PrintCurrent() {
 	s.Lock()
+	defer s.Unlock()
 	fmt.Printf("Received: %d unique numbers, %d duplicates, "+
 		"Unique totals: %d \n", s.Received, s.Duplicates, s.Total)
-	s.Unlock()
+	s.Received = 0
+	s.Duplicates = 0
 }
 
 // Updates Total statistics based on the values recv and dups,
@@ -41,10 +44,15 @@ func (s *Statistics) BulkUpdate(recv, dups int) {
 
 // Increases global duplicate count by 1
 func (s *Statistics) IncreaseDups() {
-	// TODO Implement
+	s.Lock()
+	s.Duplicates += 1
+	s.Unlock()
 }
 
-// Increases global duplicate count by 1
+// Increases global received count by 1
 func (s *Statistics) IncreaseReceived() {
-	// TODO Implement
+	s.Lock()
+	defer s.Unlock()
+	s.Received += 1
+	s.Total += 1
 }

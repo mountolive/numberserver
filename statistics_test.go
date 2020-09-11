@@ -1,13 +1,14 @@
 package main
 
 import (
+	"math/rand"
 	"testing"
 	"testing/quick"
 
 	"github.com/stretchr/testify/assert"
 )
 
-type statisticsTestCase struct {
+type bulkUpdateTestCase struct {
 	Name       string
 	Received   int
 	Duplicates int
@@ -15,9 +16,27 @@ type statisticsTestCase struct {
 }
 
 func TestStatistics(t *testing.T) {
+	t.Run("PrintCurrent", func(t *testing.T) {
+		s := &Statistics{Total: 100, Received: 12, Duplicates: 32}
+		asserter := func() bool {
+			limit := rand.Intn(40)
+			for i := 0; i < limit; i++ {
+				if limit%2 == 0 {
+					s.IncreaseDups()
+				}
+				s.IncreaseReceived()
+			}
+			s.PrintCurrent()
+			return s.Duplicates == 0 && s.Received == 0
+		}
+		if err := quick.Check(asserter, &quick.Config{MaxCount: 100}); err != nil {
+			t.Error(err)
+		}
+
+	})
 	t.Run("BulkUpdate Basic Correctness", func(t *testing.T) {
 		errMsg := "Got %d, Expected: %d"
-		testCases := []statisticsTestCase{
+		testCases := []bulkUpdateTestCase{
 			{
 				Name:       "No change",
 				Received:   1,
