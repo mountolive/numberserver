@@ -5,6 +5,7 @@ import (
 	"sync"
 )
 
+// Bookkeeping struct for input count
 type Statistics struct {
 	sync.Mutex
 	Received   int

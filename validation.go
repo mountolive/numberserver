@@ -1,5 +1,13 @@
 package main
 
+import (
+	"fmt"
+	"runtime"
+)
+
+var terminate = fmt.Sprintf("%s%s", "terminate", LINE_BREAK)
+var currOs = runtime.GOOS
+
 // Basic Validation functions
 
 // Checks the input passed and indicates whether it
