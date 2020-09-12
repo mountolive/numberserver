@@ -74,7 +74,7 @@ func (nc *NumberChecker) ValidateInput(input string) bool {
 		substr = 2
 	}
 	newEnd := len(input) - substr
-	if newEnd != 9 {
+	if newEnd != nc.numLimit {
 		return false
 	}
 	// Omitting the carriage in the evaluation
