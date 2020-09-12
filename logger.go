@@ -1,5 +1,7 @@
 package main
 
+import "context"
+
 const LOG_FILE = "./numbers.log"
 
 type Logger struct {
@@ -38,9 +40,8 @@ func Appender(appender bool) func(*Logger) {
 
 // Writes streamed input to the configured log file
 // throws error if file doesn't exist
-func (l *Logger) StreamWrite(streamLines <-chan string) error {
+func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) {
 	// TODO Implement
-	return nil
 }
 
 // Sets new filename to be written by the logger
