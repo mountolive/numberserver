@@ -22,6 +22,7 @@ type streamWriteCase struct {
 	Name     string
 	Appender bool
 	Lines    []string
+	Filename string
 }
 
 func TestLogger(t *testing.T) {
@@ -91,6 +92,10 @@ func TestLogger(t *testing.T) {
 			for scanner.Scan() {
 				lines = append(lines, scanner.Text())
 			}
+			if len(lines) != len(wroteLines) {
+				return false, fmt.Errorf("Lines scanned: %d vs. Lines wrote: %d",
+					len(lines), len(wroteLines))
+			}
 			// Comparing lines
 			result := true
 			sort.Strings(lines)
@@ -113,18 +118,24 @@ func TestLogger(t *testing.T) {
 				Name:     "Append one line",
 				Lines:    []string{"one", "two"},
 				Appender: true,
+				// Using a brand new file for the test
+				Filename: "./appender1.log",
 			},
 			{
 				Name:     "Append several line",
 				Lines:    []string{"one", "two", "three"},
 				Appender: true,
+				Filename: "./appender2.log",
 			},
 		}
 		for _, tc := range testCases {
 			t.Run(tc.Name, func(t *testing.T) {
 				logger := NewLogger(Appender(tc.Appender))
+				if tc.Filename != "" {
+					logger.setFilename(tc.Filename)
+				}
 				// Giving it capacity so that it doens't block the write
-				readStream := make(chan string, 10)
+				readStream := make(chan string)
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 				// Check what happens when we open an existing file for appending

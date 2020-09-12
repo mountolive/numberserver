@@ -1,6 +1,10 @@
 package main
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"os"
+)
 
 const LOG_FILE = "./numbers.log"
 
@@ -38,10 +42,37 @@ func Appender(appender bool) func(*Logger) {
 	}
 }
 
-// Writes streamed input to the configured log file
+// Writes streamed input to the configured log file,
+// adding a carriage new-line character to the end of each passed line
 // throws error if file doesn't exist
 func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) error {
-	// TODO Implement
+	var file *os.File
+	var err error
+	if l.appender {
+		// Appending existing file
+		file, err = os.OpenFile(l.filename, os.O_APPEND|os.O_WRONLY, 0644)
+	} else {
+		file, err = os.Create(l.filename)
+	}
+	if err != nil {
+		return fmt.Errorf("An error occurred while retrieving/creating the logfile: %w", err)
+	}
+	// Start consuming input
+	go func() {
+		defer file.Close()
+		for line := range streamLines {
+			select {
+			case <-ctx.Done():
+				fmt.Println("Canceled writing")
+				return
+			default:
+				if _, err = file.Write([]byte(fmt.Sprintf("%v%s", line, LINE_BREAK))); err != nil {
+					fmt.Printf("An error occurred while writing to the file: %v\n", err)
+					return
+				}
+			}
+		}
+	}()
 	return nil
 }
 
