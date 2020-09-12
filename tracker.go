@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"sync"
 )
 
 const LOG_FILE = "./numbers.log"
@@ -12,6 +13,7 @@ var BadMaxCapacity = errors.New("Max Capacity for Number Tracker can't be negati
 // Keeps a set of processed numbers
 // and statistics book
 type NumberTracker struct {
+	sync.RWMutex
 	KnownNumbers []int
 	Stats        *Statistics
 }
@@ -34,6 +36,7 @@ func NewNumberTracker(maxCapacity int) (*NumberTracker, error) {
 func (n *NumberTracker) ProcessNumber(ctx context.Context,
 	inputStream <-chan int) <-chan int {
 	output := make(chan int)
+	numSetLength := len(n.KnownNumbers)
 	go func() {
 		defer close(output)
 		for input := range inputStream {
@@ -41,15 +44,36 @@ func (n *NumberTracker) ProcessNumber(ctx context.Context,
 			case <-ctx.Done():
 				return
 			default:
-				valid := input >= 0 && input < len(n.KnownNumbers)
-				if valid && n.KnownNumbers[input] == 0 {
-					// Marking it as seen
-					n.KnownNumbers[input] = 1
-					// passing it on
-					output <- input
+				valid := input >= 0 && input < numSetLength
+				if valid {
+					if n.checkUniqueness(input) {
+						// Marking it as seen
+						n.registerNumber(input)
+						// passing it on
+						output <- input
+						// Increasing unique received count
+						n.Stats.IncreaseReceived()
+					} else {
+						n.Stats.IncreaseDups()
+					}
 				}
 			}
 		}
 	}()
 	return output
+}
+
+func (n *NumberTracker) registerNumber(input int) {
+	// Locking reading for consistency
+	// Any subsequent read will have the proper state
+	n.RLock()
+	defer n.RUnlock()
+	n.KnownNumbers[input] = 1
+}
+
+func (n *NumberTracker) checkUniqueness(input int) bool {
+	// Locking writing for consistency
+	n.Lock()
+	defer n.Unlock()
+	return n.KnownNumbers[input] == 0
 }

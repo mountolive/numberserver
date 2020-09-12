@@ -43,14 +43,14 @@ func (s *Statistics) BulkUpdate(recv, dups int) {
 	s.Total = s.Total + (recv - dups)
 }
 
-// Increases global duplicate count by 1
+// Increases sessions' duplicate count by 1
 func (s *Statistics) IncreaseDups() {
 	s.Lock()
 	s.Duplicates += 1
 	s.Unlock()
 }
 
-// Increases global received count by 1
+// Increases session's unique received count by 1
 func (s *Statistics) IncreaseReceived() {
 	s.Lock()
 	defer s.Unlock()

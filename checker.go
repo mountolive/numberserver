@@ -3,10 +3,13 @@ package main
 import (
 	"fmt"
 	"runtime"
+	"strconv"
 )
 
 var currOs = runtime.GOOS
 
+// Exposes basic methods for the validation of input
+// to the server
 type Checker interface {
 	CheckTermination(string) bool
 	ValidateInput(string) bool
@@ -67,13 +70,9 @@ func (nc *NumberChecker) CheckTermination(input string) bool {
 // (this depends on the underlaying OS)
 // As for this implementation, a number would be expected,
 // with length 9 characters, by default (if not set differently
-// in the Checker instance)
+// in the NumberChecker instance)
 func (nc *NumberChecker) ValidateInput(input string) bool {
-	substr := 1
-	if currOs == "windows" {
-		substr = 2
-	}
-	newEnd := len(input) - substr
+	newEnd := len(input) - len(LINE_BREAK)
 	if newEnd != nc.numLimit {
 		return false
 	}
@@ -86,4 +85,15 @@ func (nc *NumberChecker) ValidateInput(input string) bool {
 		}
 	}
 	return true
+}
+
+// Simple wrapper for strconv.Atoi that removes trailing carriage
+func (nc *NumberChecker) GetIntValue(input string) (int, error) {
+	inputLength := len(input)
+	breakLength := len(LINE_BREAK)
+	if inputLength < breakLength {
+		return 0, fmt.Errorf("Invalid input length: %d, standard carriage length: %d",
+			inputLength, breakLength)
+	}
+	return strconv.Atoi(input[:inputLength-breakLength])
 }
