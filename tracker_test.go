@@ -22,7 +22,7 @@ type processNumberCase struct {
 	Repeated bool
 	Ignored  bool
 	Inbound  int
-	Outbound int
+	Outbound string
 }
 
 func TestNumberTracker(t *testing.T) {
@@ -80,7 +80,7 @@ func TestNumberTracker(t *testing.T) {
 			{
 				Name:     "Correct new int",
 				Inbound:  300,
-				Outbound: 300,
+				Outbound: "300",
 			},
 			{
 				Name:     "Igonored repeated int",
@@ -90,7 +90,7 @@ func TestNumberTracker(t *testing.T) {
 		}
 		// Helper function to be used for checking
 		// outbound channel state
-		checkChan := func(outbound <-chan int) (bool, int) {
+		checkChan := func(outbound <-chan string) (bool, string) {
 			// If more than 200 millisecond passes, return
 			ticker := time.Tick(time.Millisecond * 200)
 			for {
@@ -98,7 +98,7 @@ func TestNumberTracker(t *testing.T) {
 				case value := <-outbound:
 					return false, value
 				case <-ticker:
-					return true, 0
+					return true, ""
 				}
 			}
 		}
@@ -112,7 +112,7 @@ func TestNumberTracker(t *testing.T) {
 					cancel()
 					inbound <- tc.Inbound
 					v, ok := <-outbound
-					assert.True(t, v == 0, genericError, v, 0)
+					assert.True(t, v == "", genericError, v, "")
 					assert.False(t, ok, genericError, ok, false)
 				} else {
 					inbound <- tc.Inbound
@@ -120,9 +120,9 @@ func TestNumberTracker(t *testing.T) {
 						timedout, received := checkChan(outbound)
 						if tc.Ignored {
 							require.True(t, timedout, "Should have timedout out (ignored int)")
-							assert.True(t, received == 0, genericError, received, 0)
+							assert.True(t, received == "", genericError, received, 0)
 						} else {
-							assert.True(t, tc.Inbound == received, genericError, received, tc.Inbound)
+							assert.True(t, tc.Outbound == received, genericError, received, tc.Inbound)
 						}
 					} else {
 						<-outbound

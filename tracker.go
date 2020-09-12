@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"strconv"
 	"sync"
 )
-
-const LOG_FILE = "./numbers.log"
 
 var BadMaxCapacity = errors.New("Max Capacity for Number Tracker can't be negative")
 
@@ -31,11 +30,11 @@ func NewNumberTracker(maxCapacity int) (*NumberTracker, error) {
 	return numTracker, nil
 }
 
-// Processes a number and passes it on to a channel
-// in a pipelined fashion
+// Processes a number, validates and passes it on to a channel
+// in a pipelined fashion (after converting it to a string)
 func (n *NumberTracker) ProcessNumber(ctx context.Context,
-	inputStream <-chan int) <-chan int {
-	output := make(chan int)
+	inputStream <-chan int) <-chan string {
+	output := make(chan string)
 	numSetLength := len(n.KnownNumbers)
 	go func() {
 		defer close(output)
@@ -50,7 +49,7 @@ func (n *NumberTracker) ProcessNumber(ctx context.Context,
 						// Marking it as seen
 						n.registerNumber(input)
 						// passing it on
-						output <- input
+						output <- strconv.Itoa(input)
 						// Increasing unique received count
 						n.Stats.IncreaseReceived()
 					} else {
