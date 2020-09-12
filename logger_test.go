@@ -125,30 +125,44 @@ func TestLogger(t *testing.T) {
 				logger := NewLogger(Appender(tc.Appender))
 				// Giving it capacity so that it doens't block the write
 				readStream := make(chan string, 10)
-				defer close(readStream)
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
+				// Check what happens when we open an existing file for appending
 				if tc.Appender {
-					logger.StreamWrite(ctx, readStream)
+					err := logger.StreamWrite(ctx, readStream)
+					if err != nil {
+						t.Error(err)
+					}
 					readStream <- tc.Lines[0]
 					// Cancelling the context to stop the proccess
 					cancel()
 					// Recreating the stream digesting again
 					ctx, cancel = context.WithCancel(context.Background())
-					logger.StreamWrite(ctx, readStream)
+					err = logger.StreamWrite(ctx, readStream)
+					if err != nil {
+						t.Error(err)
+					}
 					for _, line := range tc.Lines[1:] {
 						readStream <- line
 					}
+					// closing the channel
+					close(readStream)
 					check, err := wroteChecker(logger.filename, tc.Lines)
 					if err != nil {
 						t.Error(err)
 					}
 					assert.True(t, check, genericError, check, true)
+					// Writing file from scratch
 				} else {
-					logger.StreamWrite(ctx, readStream)
+					err := logger.StreamWrite(ctx, readStream)
+					if err != nil {
+						t.Error(err)
+					}
 					for _, line := range tc.Lines {
 						readStream <- line
 					}
+					// closing the channel
+					close(readStream)
 					check, err := wroteChecker(logger.filename, tc.Lines)
 					if err != nil {
 						t.Error(err)

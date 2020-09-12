@@ -40,8 +40,9 @@ func Appender(appender bool) func(*Logger) {
 
 // Writes streamed input to the configured log file
 // throws error if file doesn't exist
-func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) {
+func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) error {
 	// TODO Implement
+	return nil
 }
 
 // Sets new filename to be written by the logger
