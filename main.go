@@ -161,6 +161,8 @@ func main() {
 							cancel()
 							conn.Close()
 							listener.Close()
+							// Print statistics on exit
+							tracker.PrintStatistics()
 							return
 						}
 						if checker.ValidateInput(input) {
