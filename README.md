@@ -77,7 +77,7 @@ GLOBAL OPTIONS:
 
 ## Testing
 
-Test can be run with `go test` or, even better,  `go test --race` (this detects possible race conditions [here](https://golang.org/doc/articles/race_detector.html)). 
+Tests can be executed with `go test` or, even better,  `go test --race` (this detects possible race conditions, [check here](https://golang.org/doc/articles/race_detector.html)). 
 
 In terms of actual execution, the following client could be of help for testing the results of the script:
 
