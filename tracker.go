@@ -13,7 +13,7 @@ var BadMaxCapacity = errors.New("Max Capacity for Number Tracker can't be negati
 // and statistics book
 type NumberTracker struct {
 	sync.RWMutex
-	KnownNumbers []int
+	KnownNumbers []byte
 	Stats        *Statistics
 }
 
@@ -27,7 +27,7 @@ func NewNumberTracker(maxCapacity int) (*NumberTracker, error) {
 	}
 	// Adding one to account for the maximum number possible
 	// 999999999 in the default example (indexing starts at 0)
-	numTracker.KnownNumbers = make([]int, maxCapacity+1)
+	numTracker.KnownNumbers = make([]byte, maxCapacity+1)
 	numTracker.Stats = &Statistics{}
 	return numTracker, nil
 }
