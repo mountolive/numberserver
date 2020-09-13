@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -77,6 +76,19 @@ func TestLogger(t *testing.T) {
 
 	t.Run("Stream Write", func(t *testing.T) {
 		genericError := "Got %v, Expected %v"
+		// Checks for subset condition
+		isSubset := func(got, expected []string) bool {
+			countSet := make(map[string]int)
+			for _, expectedWord := range expected {
+				countSet[expectedWord] = 1
+			}
+			for _, gotWord := range got {
+				if countSet[gotWord] == 0 {
+					return false
+				}
+			}
+			return true
+		}
 
 		// Reads the created file and checks if the lines were
 		// correctly written
@@ -101,14 +113,8 @@ func TestLogger(t *testing.T) {
 				return false, fmt.Errorf("Lines scanned: %d vs. Lines wrote: %d",
 					len(lines), len(linesExpected))
 			}
-			// Comparing lines
-			result := true
-			sort.Strings(lines)
-			sort.Strings(linesExpected)
-			for i := 0; i < len(lines); i++ {
-				result = lines[i] == linesExpected[i]
-			}
-			return result, nil
+			// Checking subset condition
+			return isSubset(lines, linesExpected), nil
 		}
 
 		testCases := []streamWriteCase{
@@ -142,7 +148,6 @@ func TestLogger(t *testing.T) {
 				}
 				// Cleaning up the filesystem
 				defer os.Remove(logger.filename)
-				// Giving it capacity so that it doens't block the write
 				readStream := make(chan string)
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()

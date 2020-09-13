@@ -90,6 +90,7 @@ func main() {
 	if termination == "" {
 		return
 	}
+
 	// **** Actual server ****
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
@@ -124,6 +125,7 @@ func main() {
 	exit := make(chan os.Signal)
 	signal.Notify(exit, os.Interrupt, os.Kill)
 	go gracefulShutdown(exit, cancel, listener)
+
 	// **** Handler ****
 	// For periodic printing of statistics (interval is defined as flag at entrance)
 	ticker := time.Tick(time.Second * time.Duration(interval))
@@ -142,7 +144,7 @@ func main() {
 			fmt.Println("Termination found, exiting...")
 			return
 		default:
-			// Checking into the rateLimiter (this will block if the queue is full)
+			// Check-in to the rateLimiter (this will block if the queue is full)
 			// Should be cleaned out on exit
 			rateLimiter <- struct{}{}
 			// Accepting connections
