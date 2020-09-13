@@ -1,18 +1,22 @@
 package main
 
 import (
+	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli"
 )
 
 func main() {
-	// Flag parsing
+	// **** Flag parsing ****
 	app := cli.NewApp()
 	app.Name = "Number logger"
 	app.Usage = `Writes numbers to defined log file.
@@ -71,7 +75,7 @@ func main() {
 		fmt.Print("Aborting...")
 		return
 	}
-	// Actual server
+	// **** Actual server ****
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		fmt.Printf("An error occurred when trying to create the connection: %v\n", err)
@@ -98,5 +102,62 @@ func main() {
 		fmt.Println("Aborting...")
 		return
 	}
-	// Handler
+	// Global context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	// Shuttingdown
+	exit := make(chan os.Signal)
+	signal.Notify(exit, os.Interrupt, os.Kill)
+	go gracefulShutdown(exit, cancel)
+	// **** Handler ****
+	ticker := time.Tick(time.Second * 10)
+	// Coordination channels
+	intInput := make(chan int)
+	processChan := tracker.ProcessNumber(ctx, intInput)
+	// Writing to logfile
+	logger.StreamWrite(ctx, processChan)
+	for {
+		select {
+		case <-ticker:
+			tracker.PrintStatistics()
+		case <-ctx.Done():
+			fmt.Println("Termination found, exiting...")
+			return
+		default:
+			// Handling connections
+			go func() {
+				conn, err := listener.Accept()
+				defer conn.Close()
+				if err != nil {
+					fmt.Printf("An error occurred while accepting connection")
+					return
+				}
+				scanner := bufio.NewScanner(conn)
+				// Reading each client's input
+				for scanner.Scan() {
+					input := scanner.Text()
+					if checker.CheckTermination(input) {
+						// Cancelling global context
+						cancel()
+						return
+					}
+					if checker.ValidateInput(input) {
+						value, err := checker.GetIntValue(input)
+						// Should be unreachable (given the ValidateInput)
+						if err != nil {
+							fmt.Printf("An error occurred while processing req: %s. Err: %v", input, err)
+							return
+						}
+						intInput <- value
+					}
+				}
+			}()
+		}
+	}
+}
+
+func gracefulShutdown(exit <-chan os.Signal, cancel context.CancelFunc) {
+	<-exit
+	fmt.Println("Received kill/intrrupt signal...")
+	cancel()
 }

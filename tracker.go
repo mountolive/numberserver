@@ -62,6 +62,11 @@ func (n *NumberTracker) ProcessNumber(ctx context.Context,
 	return output
 }
 
+// Printing current statistics' state
+func (n *NumberTracker) PrintStatistics() {
+	n.Stats.PrintCurrent()
+}
+
 func (n *NumberTracker) registerNumber(input int) {
 	// Locking reading for consistency
 	// Any subsequent read will have the proper state
