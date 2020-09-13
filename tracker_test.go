@@ -49,7 +49,8 @@ func TestNumberTracker(t *testing.T) {
 					assert.True(t, errors.Is(err, BadMaxCapacity), "Expected BadMaxCapacity, got %v", err)
 				} else {
 					maxCap := len(tracker.KnownNumbers)
-					assert.True(t, maxCap == tc.Cap, genericError, maxCap, tc.Cap)
+					// We add because indexing starts at 0
+					assert.True(t, maxCap == tc.Cap+1, genericError, maxCap, tc.Cap)
 				}
 			})
 		}
