@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,12 +44,12 @@ func TestNumberChecker(t *testing.T) {
 			{
 				Name:         "Basic termination 1",
 				NewTerminate: "I'm thinking of ending things",
-				Expected:     fmt.Sprintf("%s%s", "I'm thinking of ending things", LINE_BREAK),
+				Expected:     "I'm thinking of ending things",
 			},
 			{
 				Name:         "Basic termination 2",
 				NewTerminate: "This is the end",
-				Expected:     fmt.Sprintf("%s%s", "This is the end", LINE_BREAK),
+				Expected:     "This is the end",
 			},
 		}
 		for _, tc := range testCases {
@@ -112,8 +111,7 @@ func TestNumberChecker(t *testing.T) {
 		}
 		for _, tc := range testCases {
 			t.Run(tc.Name, func(t *testing.T) {
-				input := fmt.Sprintf("%s%s", tc.Input, LINE_BREAK)
-				result := numberChecker.CheckTermination(input)
+				result := numberChecker.CheckTermination(tc.Input)
 				assert.True(t, tc.Expected == result, generalErrorMsg, tc.Input, tc.Expected)
 			})
 		}
@@ -149,44 +147,8 @@ func TestNumberChecker(t *testing.T) {
 		}
 		for _, tc := range testCases {
 			t.Run(tc.Name, func(t *testing.T) {
-				input := fmt.Sprintf("%s%s", tc.Input, LINE_BREAK)
-				result := numberChecker.ValidateInput(input)
+				result := numberChecker.ValidateInput(tc.Input)
 				assert.True(t, tc.Expected == result, tc.ErrorMsg, tc.Input, tc.Expected)
-			})
-		}
-	})
-
-	t.Run("Get Int Value", func(t *testing.T) {
-		numberChecker := NewDefaultNumberChecker()
-		genericError := "Got: %v, Expected: %v"
-		testCases := []getIntValueCase{
-			{
-				Name:     "Correct string 1",
-				Input:    fmt.Sprintf("%s%s", "123456789", LINE_BREAK),
-				Expected: 123456789,
-			},
-			{
-				Name:     "Correct string 2",
-				Input:    fmt.Sprintf("%s%s", "000000009", LINE_BREAK),
-				Expected: 9,
-			},
-			{
-				Name:    "Incorrect string",
-				Input:   fmt.Sprintf("%s%s", "nothing", LINE_BREAK),
-				Errored: true,
-			},
-			{
-				Name:    "Empty string",
-				Input:   "",
-				Errored: true,
-			},
-		}
-		for _, tc := range testCases {
-			t.Run(tc.Name, func(t *testing.T) {
-				value, err := numberChecker.GetIntValue(tc.Input)
-				notNilErr := err != nil
-				assert.True(t, notNilErr == tc.Errored, genericError, notNilErr, tc.Errored)
-				assert.True(t, value == tc.Expected, genericError, value, tc.Expected)
 			})
 		}
 	})

@@ -28,11 +28,11 @@ func main() {
 		&cli.IntFlag{
 			Name:  "port, p",
 			Value: 4000,
-			Usage: "Port to be listened to, default: 4000",
+			Usage: "Port to be listened to",
 		},
 		&cli.BoolFlag{
 			Name:  "append, a",
-			Usage: "Whether to append to existing log file or recreate o start",
+			Usage: "Whether to append to existing log file or recreate on start",
 		},
 		&cli.StringFlag{
 			Name:  "logfile, l",
@@ -55,7 +55,7 @@ func main() {
 	var logfile string
 	var termination string
 	var digits int
-	app.Action = func(ctx cli.Context) error {
+	app.Action = func(ctx *cli.Context) error {
 		port = ctx.GlobalInt("port")
 		if port < 0 || port > 65535 {
 			return errors.New("Port can't be a negative number, nor greater than 65535")
@@ -108,7 +108,7 @@ func main() {
 	// When shuttingdown
 	exit := make(chan os.Signal)
 	signal.Notify(exit, os.Interrupt, os.Kill)
-	go gracefulShutdown(exit, cancel)
+	go gracefulShutdown(exit, cancel, listener)
 	// **** Handler ****
 	// For periodic printing of statistics
 	ticker := time.Tick(time.Second * 10)
@@ -126,24 +126,27 @@ func main() {
 			return
 		default:
 			// Handling connections
+			conn, err := listener.Accept()
+			if err != nil {
+				fmt.Printf("An error occurred while accepting connection: %v\n", err)
+				return
+			}
+			// Processing connection
 			go func() {
-				conn, err := listener.Accept()
 				defer conn.Close()
-				if err != nil {
-					fmt.Printf("An error occurred while accepting connection")
-					return
-				}
 				scanner := bufio.NewScanner(conn)
 				// Reading each client's input
 				for scanner.Scan() {
 					input := scanner.Text()
 					if checker.CheckTermination(input) {
-						// Cancelling global context
+						// Cancelling global context, connection and server
 						cancel()
+						conn.Close()
+						listener.Close()
 						return
 					}
 					if checker.ValidateInput(input) {
-						value, err := checker.GetIntValue(input)
+						value, err := strconv.Atoi(input)
 						// Should be unreachable (given the ValidateInput)
 						if err != nil {
 							fmt.Printf("An error occurred while processing req: %s. Err: %v", input, err)
@@ -157,8 +160,9 @@ func main() {
 	}
 }
 
-func gracefulShutdown(exit <-chan os.Signal, cancel context.CancelFunc) {
+func gracefulShutdown(exit <-chan os.Signal, cancel context.CancelFunc, listener net.Listener) {
 	<-exit
 	fmt.Println("Received kill/intrrupt signal...")
 	cancel()
+	listener.Close()
 }
