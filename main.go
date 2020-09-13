@@ -105,11 +105,12 @@ func main() {
 	// Global context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	// Shuttingdown
+	// When shuttingdown
 	exit := make(chan os.Signal)
 	signal.Notify(exit, os.Interrupt, os.Kill)
 	go gracefulShutdown(exit, cancel)
 	// **** Handler ****
+	// For periodic printing of statistics
 	ticker := time.Tick(time.Second * 10)
 	// Coordination channels
 	intInput := make(chan int)

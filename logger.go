@@ -67,12 +67,19 @@ func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) err
 	go func() {
 		defer file.Close()
 		for line := range streamLines {
+			lineToPrint := []byte(fmt.Sprintf("%v%s", line, LINE_BREAK))
 			select {
 			case <-ctx.Done():
+				// Attempting writing lastly received line
+				fmt.Println("Writing last input, before exiting")
+				if _, err = file.Write(lineToPrint); err != nil {
+					fmt.Printf("An error occurred while writing to the file: %v\n", err)
+					return
+				}
 				fmt.Println("Canceled writing")
 				return
 			default:
-				if _, err = file.Write([]byte(fmt.Sprintf("%v%s", line, LINE_BREAK))); err != nil {
+				if _, err = file.Write(lineToPrint); err != nil {
 					fmt.Printf("An error occurred while writing to the file: %v\n", err)
 					return
 				}
