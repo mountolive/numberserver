@@ -59,13 +59,14 @@ func TestLogger(t *testing.T) {
 					appenderFlag = tc.Appender
 					logger = NewLogger(Filename(tc.Filename))
 				} else if tc.Appender {
-					newFilename = LOG_FILE
+					newFilename = DEFAULT_LOG_FILE
 					appenderFlag = tc.Appender
 					logger = NewLogger(Appender(tc.Appender))
 				} else {
-					newFilename = LOG_FILE
+					newFilename = DEFAULT_LOG_FILE
 					logger = NewLogger()
 				}
+				// It will stop evaluation if this fails
 				require.True(t, newFilename == logger.filename,
 					genericError, newFilename, logger.filename)
 				assert.True(t, appenderFlag == logger.appender,
@@ -76,6 +77,7 @@ func TestLogger(t *testing.T) {
 
 	t.Run("Stream Write", func(t *testing.T) {
 		genericError := "Got %v, Expected %v"
+
 		// Checks for subset condition
 		isSubset := func(got, expected []string) bool {
 			countSet := make(map[string]int)
@@ -123,7 +125,7 @@ func TestLogger(t *testing.T) {
 				Lines: []string{"one"},
 			},
 			{
-				Name:  "Write several line",
+				Name:  "Write several lines",
 				Lines: []string{"one", "two", "three"},
 			},
 			{
@@ -134,7 +136,7 @@ func TestLogger(t *testing.T) {
 				Filename: "./appender1.log",
 			},
 			{
-				Name:     "Append several line",
+				Name:     "Append several lines",
 				Lines:    []string{"one", "two", "three"},
 				Appender: true,
 				Filename: "./appender2.log",
@@ -148,6 +150,7 @@ func TestLogger(t *testing.T) {
 				}
 				// Cleaning up the filesystem
 				defer os.Remove(logger.filename)
+				// Will be closed in the if-else blocks, below
 				readStream := make(chan string)
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()

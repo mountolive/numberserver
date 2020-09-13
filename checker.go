@@ -2,10 +2,7 @@ package main
 
 import (
 	"fmt"
-	"runtime"
 )
-
-var currOs = runtime.GOOS
 
 // Exposes basic methods for the validation of input
 // to the server
@@ -24,13 +21,10 @@ type NumberChecker struct {
 // Creates a NumberChecker with Termination string == "terminate"
 // (and includes carriage) and NumLimit == 9
 func NewDefaultNumberChecker() *NumberChecker {
-	defaultTerminate := "terminate"
-	return &NumberChecker{termination: defaultTerminate, numLimit: 9}
+	return &NumberChecker{termination: "terminate", numLimit: 9}
 }
 
-// Custom setter for termination word
-// it adds the system's carriage character to the end of the string
-// and assigns it to the NumberCheker
+// Custom setter for termination keyword (used to stop the connection)
 func (nc *NumberChecker) SetTermination(newTerminate string) {
 	nc.termination = newTerminate
 }

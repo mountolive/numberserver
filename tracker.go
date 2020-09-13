@@ -19,7 +19,7 @@ type NumberTracker struct {
 
 // Creates a new NumberTracker.
 // maxCapacity should be the maximum possible number
-// that can be present known by the tracker
+// that can be currently known by the tracker
 func NewNumberTracker(maxCapacity int) (*NumberTracker, error) {
 	numTracker := &NumberTracker{}
 	if maxCapacity < 0 {

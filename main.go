@@ -61,6 +61,7 @@ func main() {
 			Usage: "Max number of concurrent connections allowed",
 		},
 	}
+	// Flag variables
 	var port int
 	var appender bool
 	var logfile string
@@ -68,6 +69,7 @@ func main() {
 	var digits int
 	var interval int
 	var maxconn int
+	// Parsing of flags
 	app.Action = func(ctx *cli.Context) error {
 		port = ctx.GlobalInt("port")
 		if port < 0 || port > 65535 {
@@ -134,6 +136,7 @@ func main() {
 	defer cancel()
 	// When shuttingdown
 	exit := make(chan os.Signal)
+	defer close(exit)
 	signal.Notify(exit, os.Interrupt, os.Kill)
 	go gracefulShutdown(exit, cancel, listener)
 
@@ -156,7 +159,7 @@ func main() {
 			return
 		default:
 			// Check-in to the rateLimiter (this will block if the queue is full)
-			// Should be cleaned out on exit
+			// Will be cleaned out on exit
 			rateLimiter <- struct{}{}
 			// Accepting connections
 			conn, err := listener.Accept()

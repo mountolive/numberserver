@@ -46,7 +46,7 @@ func TestNumberTracker(t *testing.T) {
 				// It will stop evaluation if this fails
 				require.True(t, tc.Errored == errored, genericError, errored, tc.Errored)
 				if errored {
-					assert.True(t, errors.Is(err, BadMaxCapacity), "Expected BadMaxCapacity, got %v", err)
+					assert.True(t, errors.Is(err, BadMaxCapacity), "Expected BadMaxCapacity error, got %v", err)
 				} else {
 					maxCap := len(tracker.KnownNumbers)
 					// We add because indexing starts at 0
@@ -92,6 +92,7 @@ func TestNumberTracker(t *testing.T) {
 		// Helper function to be used for checking
 		// outbound channel state
 		checkChan := func(outbound <-chan string) (bool, string) {
+			// Hard limit
 			// If more than 200 millisecond passes, return
 			ticker := time.Tick(time.Millisecond * 200)
 			for {
@@ -108,6 +109,7 @@ func TestNumberTracker(t *testing.T) {
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 				inbound := make(chan int)
+				defer close(inbound)
 				outbound := tracker.ProcessNumber(ctx, inbound)
 				if tc.Canceled {
 					cancel()

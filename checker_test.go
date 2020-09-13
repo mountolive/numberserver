@@ -119,24 +119,25 @@ func TestNumberChecker(t *testing.T) {
 
 	t.Run("Validate Input", func(t *testing.T) {
 		numberChecker := NewDefaultNumberChecker()
+		expectedNumberErrMsg := "The number passed %s should have been %v"
 		testCases := []validateInputTestCase{
 			{
 				Name:     "Valid Input Num 1",
 				Input:    "314159265",
 				Expected: true,
-				ErrorMsg: "The number passed %s should have been %v",
+				ErrorMsg: expectedNumberErrMsg,
 			},
 			{
 				Name:     "Valid Input Num 2",
 				Input:    "007007009",
 				Expected: true,
-				ErrorMsg: "The number passed %s should have been %v",
+				ErrorMsg: expectedNumberErrMsg,
 			},
 			{
 				Name:     "Incomplete number",
 				Input:    "00700700",
 				Expected: false,
-				ErrorMsg: "The number passed %s should have been %v",
+				ErrorMsg: expectedNumberErrMsg,
 			},
 			{
 				Name:     "Non-numeric string",

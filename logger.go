@@ -7,8 +7,9 @@ import (
 	"os"
 )
 
-const LOG_FILE = "./numbers.log"
+const DEFAULT_LOG_FILE = "./numbers.log"
 
+// Handler for streamed logging
 type Logger struct {
 	filename string
 	appender bool
@@ -16,12 +17,12 @@ type Logger struct {
 
 // Creates a new Logger. If no option is passed, creates it
 // so that the filename to log would be ./numbers.log
-// and will overwrite the file (if existing) for every fresh start
-// (using options allows us to avoid creating several New* functions)
+// and will overwrite the file (if existing) for every fresh restart
 // example usages: NewLogger(Filename("new.log"), Appender(true))
 //                 NewLogger(Appender(true))
 func NewLogger(options ...func(*Logger)) *Logger {
-	defaultLogger := &Logger{filename: LOG_FILE, appender: false}
+	// (using options allows us to avoid creating several New* functions)
+	defaultLogger := &Logger{filename: DEFAULT_LOG_FILE, appender: false}
 	for _, option := range options {
 		option(defaultLogger)
 	}
@@ -43,8 +44,7 @@ func Appender(appender bool) func(*Logger) {
 	}
 }
 
-// Writes streamed input to the configured log file,
-// adding a carriage new-line character to the end of each passed line
+// Writes streamed input to the configured log file, line by line
 // throws error if file doesn't exist
 func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) error {
 	var file *os.File
@@ -52,7 +52,7 @@ func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) err
 	// Checking context before opening file
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("Context passed to stream writer is cancelled")
+		return fmt.Errorf("Context passed to StreamWriter is cancelled: %v", ctx.Err())
 	default:
 		if l.appender {
 			// Appending existing file, creating if it doesn't exist
@@ -64,7 +64,8 @@ func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) err
 			return fmt.Errorf("An error occurred while retrieving/creating the logfile: %w", err)
 		}
 	}
-	// Creating logger
+	// Creating logger (second parameter stands for prefix
+	// and third parameter for custom flags)
 	logUtil := log.New(file, "", 0)
 	// Start consuming input
 	go func() {
@@ -73,9 +74,9 @@ func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) err
 			select {
 			case <-ctx.Done():
 				// Attempting writing lastly received line
-				fmt.Println("Writing last input, before exiting")
-				logUtil.Println(line)
 				fmt.Println("Canceled writing")
+				fmt.Println("Writing last input before exiting")
+				logUtil.Println(line)
 				return
 			default:
 				logUtil.Println(line)
