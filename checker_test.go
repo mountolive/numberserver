@@ -34,6 +34,10 @@ type getIntValueCase struct {
 }
 
 func TestNumberChecker(t *testing.T) {
+	t.Run("Canary test", func(t *testing.T) {
+		var _ Checker = &NumberChecker{}
+	})
+
 	t.Run("Set Terminate", func(t *testing.T) {
 		genericError := "Got: %s, Expected: %s"
 		numberChecker := NewDefaultNumberChecker()
