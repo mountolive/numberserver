@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -63,26 +64,21 @@ func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) err
 			return fmt.Errorf("An error occurred while retrieving/creating the logfile: %w", err)
 		}
 	}
+	// Creating logger
+	logUtil := log.New(file, "", 0)
 	// Start consuming input
 	go func() {
 		defer file.Close()
 		for line := range streamLines {
-			lineToPrint := []byte(fmt.Sprintf("%v%s", line, LINE_BREAK))
 			select {
 			case <-ctx.Done():
 				// Attempting writing lastly received line
 				fmt.Println("Writing last input, before exiting")
-				if _, err = file.Write(lineToPrint); err != nil {
-					fmt.Printf("An error occurred while writing to the file: %v\n", err)
-					return
-				}
+				logUtil.Println(line)
 				fmt.Println("Canceled writing")
 				return
 			default:
-				if _, err = file.Write(lineToPrint); err != nil {
-					fmt.Printf("An error occurred while writing to the file: %v\n", err)
-					return
-				}
+				logUtil.Println(line)
 			}
 		}
 	}()

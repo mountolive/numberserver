@@ -129,7 +129,11 @@ func main() {
 	ticker := time.Tick(time.Second * time.Duration(interval))
 	// Coordination channels
 	intInput := make(chan int)
+	defer close(intInput)
 	processChan := tracker.ProcessNumber(ctx, intInput)
+	// Rate limitting
+	rateLimiter := make(chan struct{}, 5)
+	defer close(rateLimiter)
 	// Writing to logfile
 	logger.StreamWrite(ctx, processChan)
 	for {
@@ -138,6 +142,9 @@ func main() {
 			fmt.Println("Termination found, exiting...")
 			return
 		default:
+			// Checking into the rateLimiter (this will block if the queue is full)
+			// Should be cleaned out on exit
+			rateLimiter <- struct{}{}
 			// Accepting connections
 			conn, err := listener.Accept()
 			if err != nil {
@@ -179,6 +186,8 @@ func main() {
 						}
 					}
 				}
+				// Releasing connection's place in the queue
+				<-rateLimiter
 			}()
 		}
 	}
