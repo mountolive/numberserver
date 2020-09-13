@@ -7,6 +7,23 @@ will use that as a signal for a graceful shutdown attempt.
 By default, the server will start in port `4000`, will write to the `./numbers.log` file,
 will take numbers up to `999999999` and will recreate the log file per fresh restart.
 
+The server is limited to take up to 5 concurrent connections (although, this can be changed on start, also).
+
+The server will prompt statistics to STDOUT every 10 seconds (by default, this interval can be [changed also](#usage)):
+
+Example output (every 10 seconds):
+```
+Starting number server. Welcome!
+Received 0 unique numbers, 0 duplicates. Unique totals: 0
+Received 443007 unique numbers, 1329338 duplicates. Unique totals: 443007
+Received 731672 unique numbers, 3372769 duplicates. Unique totals: 1174679
+Received 711834 unique numbers, 2852898 duplicates. Unique totals: 1886513
+Received 701727 unique numbers, 2814478 duplicates. Unique totals: 2588240
+Received 678692 unique numbers, 2724788 duplicates. Unique totals: 3266932
+Received 701961 unique numbers, 2820704 duplicates. Unique totals: 3968893
+Received 678127 unique numbers, 2726743 duplicates. Unique totals: 4647020
+```
+
 It's written in [Go](https://golang.org/).
 
 ## Requirements
@@ -38,7 +55,8 @@ NAME:
                Numbers can have up to the max number
                of digits defined by the user: 9 by default.
                When the termination ("terminate") keyword is prompted,
-               the program will attempt to shutdown gracefully
+               the program will attempt to shutdown gracefully.
+               This termination keyword can be changed on start (see --help)
 
 USAGE:
    newrelictest [global options] command [command options] [arguments...]
@@ -53,6 +71,7 @@ GLOBAL OPTIONS:
    --termination value, -t value  Terminate keyword, for shutting down the server (default: "terminate")
    --digits value, -d value       Max number of digits permitted for int input (default: 9)
    --interval value, -i value     Show statistics every * seconds (default: 10)
+   --maxconn value, -c value      Max number of concurrent connections allowed (default: 5)
    --help, -h                     show help
 ```
 

@@ -23,7 +23,8 @@ func main() {
                Numbers can have up to the max number
 							 of digits defined by the user: 9 by default.
 							 When the termination ("terminate") keyword is prompted,
-							 the program will attempt to shutdown gracefully`
+							 the program will attempt to shutdown gracefully.
+							 This termination keyword can be changed on start (see --help)`
 	app.Flags = []cli.Flag{
 		&cli.IntFlag{
 			Name:  "port, p",
@@ -54,6 +55,11 @@ func main() {
 			Value: 10,
 			Usage: "Show statistics every * seconds",
 		},
+		&cli.IntFlag{
+			Name:  "maxconn, c",
+			Value: 5,
+			Usage: "Max number of concurrent connections allowed",
+		},
 	}
 	var port int
 	var appender bool
@@ -61,6 +67,7 @@ func main() {
 	var termination string
 	var digits int
 	var interval int
+	var maxconn int
 	app.Action = func(ctx *cli.Context) error {
 		port = ctx.GlobalInt("port")
 		if port < 0 || port > 65535 {
@@ -76,6 +83,10 @@ func main() {
 		interval = ctx.GlobalInt("interval")
 		if interval < 0 {
 			return errors.New("Statistics' interval can't be negative")
+		}
+		maxconn = ctx.GlobalInt("maxconn")
+		if maxconn < 0 {
+			return errors.New("The number of max concurrent connections can't be negative")
 		}
 		return nil
 	}
@@ -134,7 +145,7 @@ func main() {
 	defer close(intInput)
 	processChan := tracker.ProcessNumber(ctx, intInput)
 	// Rate limitting
-	rateLimiter := make(chan struct{}, 5)
+	rateLimiter := make(chan struct{}, maxconn)
 	defer close(rateLimiter)
 	// Writing to logfile
 	logger.StreamWrite(ctx, processChan)
