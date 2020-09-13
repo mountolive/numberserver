@@ -95,7 +95,7 @@ func main() {
 	err := app.Run(os.Args)
 	if err != nil {
 		fmt.Printf("An error occurred while trying to parse options: %v\n", err)
-		fmt.Print("Aborting...")
+		fmt.Println("Aborting...")
 		return
 	}
 	// Using termination as a flag to terminate the script (if not set)
