@@ -42,12 +42,12 @@ Build the project:
 
 This will create the script that would start the server, it should have execution permissions:
 
-`./newrelictest`
+`./newrelictest`, or `./newrelictest.exe` for windows.
 
 ## Usage
 
 The script allows for some initial customization of the parameters which the server should use.
-For a detailed list of the parameters, you can run `./newrelictest --help`. This will prompt the following:
+For a detailed list of the parameters, you can run `./newrelictest --help` (`./newrelictest.exe --help` on windows). This will prompt the following:
 
 ```
 NAME:
