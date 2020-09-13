@@ -48,14 +48,20 @@ func Appender(appender bool) func(*Logger) {
 func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) error {
 	var file *os.File
 	var err error
-	if l.appender {
-		// Appending existing file
-		file, err = os.OpenFile(l.filename, os.O_APPEND|os.O_WRONLY, 0644)
-	} else {
-		file, err = os.Create(l.filename)
-	}
-	if err != nil {
-		return fmt.Errorf("An error occurred while retrieving/creating the logfile: %w", err)
+	// Checking context before opening file
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("Context passed to stream writer is cancelled")
+	default:
+		if l.appender {
+			// Appending existing file, creating if it doesn't exist
+			file, err = os.OpenFile(l.filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		} else {
+			file, err = os.Create(l.filename)
+		}
+		if err != nil {
+			return fmt.Errorf("An error occurred while retrieving/creating the logfile: %w", err)
+		}
 	}
 	// Start consuming input
 	go func() {

@@ -77,9 +77,10 @@ func TestLogger(t *testing.T) {
 
 	t.Run("Stream Write", func(t *testing.T) {
 		genericError := "Got %v, Expected %v"
+
 		// Reads the created file and checks if the lines were
 		// correctly written
-		wroteChecker := func(path string, wroteLines []string) (bool, error) {
+		wroteChecker := func(path string, linesExpected []string) (bool, error) {
 			file, err := os.Open(path)
 			defer file.Close()
 			if err != nil {
@@ -92,19 +93,24 @@ func TestLogger(t *testing.T) {
 			for scanner.Scan() {
 				lines = append(lines, scanner.Text())
 			}
-			if len(lines) != len(wroteLines) {
+			sizeDiff := len(linesExpected) - len(lines)
+			// If negative, means we wrote more lines than expected
+			// If > 1, means we're missing writing more than the expected last line
+			// (After context cancellation)
+			if sizeDiff < 0 || sizeDiff > 1 {
 				return false, fmt.Errorf("Lines scanned: %d vs. Lines wrote: %d",
-					len(lines), len(wroteLines))
+					len(lines), len(linesExpected))
 			}
 			// Comparing lines
 			result := true
 			sort.Strings(lines)
-			sort.Strings(wroteLines)
+			sort.Strings(linesExpected)
 			for i := 0; i < len(lines); i++ {
-				result = lines[i] == wroteLines[i]
+				result = lines[i] == linesExpected[i]
 			}
 			return result, nil
 		}
+
 		testCases := []streamWriteCase{
 			{
 				Name:  "Write 1 line",
@@ -134,6 +140,8 @@ func TestLogger(t *testing.T) {
 				if tc.Filename != "" {
 					logger.setFilename(tc.Filename)
 				}
+				// Cleaning up the filesystem
+				defer os.Remove(logger.filename)
 				// Giving it capacity so that it doens't block the write
 				readStream := make(chan string)
 				ctx, cancel := context.WithCancel(context.Background())
@@ -148,8 +156,7 @@ func TestLogger(t *testing.T) {
 					// Cancelling the context to stop the proccess
 					cancel()
 					// Recreating the stream digesting again
-					ctx, cancel = context.WithCancel(context.Background())
-					err = logger.StreamWrite(ctx, readStream)
+					err = logger.StreamWrite(context.Background(), readStream)
 					if err != nil {
 						t.Error(err)
 					}
