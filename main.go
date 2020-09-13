@@ -171,6 +171,9 @@ func main() {
 								return
 							}
 							intInput <- value
+						} else {
+							// If not conforming close connection
+							conn.Close()
 						}
 					}
 				}
