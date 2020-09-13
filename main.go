@@ -125,7 +125,7 @@ func main() {
 	signal.Notify(exit, os.Interrupt, os.Kill)
 	go gracefulShutdown(exit, cancel, listener)
 	// **** Handler ****
-	// For periodic printing of statistics
+	// For periodic printing of statistics (interval is defined as flag at entrance)
 	ticker := time.Tick(time.Second * time.Duration(interval))
 	// Coordination channels
 	intInput := make(chan int)
@@ -138,13 +138,13 @@ func main() {
 			fmt.Println("Termination found, exiting...")
 			return
 		default:
-			// Handling connections
+			// Accepting connections
 			conn, err := listener.Accept()
 			if err != nil {
 				fmt.Printf("The server stopped accepting connections (%v) \n", err)
 				return
 			}
-			// Processing connection
+			// Handling connection
 			go func() {
 				defer conn.Close()
 				scanner := bufio.NewScanner(conn)
@@ -179,6 +179,7 @@ func main() {
 	}
 }
 
+// Closes app resources for cleaner shutdown
 func gracefulShutdown(exit <-chan os.Signal, cancel context.CancelFunc, listener net.Listener) {
 	<-exit
 	fmt.Println("Received kill/intrrupt signal...")
