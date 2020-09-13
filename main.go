@@ -21,8 +21,8 @@ func main() {
 	app.Name = "Number logger"
 	app.Usage = `Writes numbers to defined log file.
                Numbers can have up to the max number
-							 of digits defined by the user; 9 by default.
-							 When the terminatio keyword is typed,
+							 of digits defined by the user: 9 by default.
+							 When the termination ("terminate") keyword is prompted,
 							 the program will attempt to shutdown gracefully`
 	app.Flags = []cli.Flag{
 		&cli.IntFlag{
@@ -49,12 +49,18 @@ func main() {
 			Value: 9,
 			Usage: "Max number of digits permitted for int input",
 		},
+		&cli.IntFlag{
+			Name:  "interval, i",
+			Value: 10,
+			Usage: "Show statistics every * seconds",
+		},
 	}
 	var port int
 	var appender bool
 	var logfile string
 	var termination string
 	var digits int
+	var interval int
 	app.Action = func(ctx *cli.Context) error {
 		port = ctx.GlobalInt("port")
 		if port < 0 || port > 65535 {
@@ -67,12 +73,21 @@ func main() {
 		if digits < 0 || digits > 9 {
 			return errors.New("Digits can't be a negative number, nor greater than 9")
 		}
+		interval = ctx.GlobalInt("interval")
+		if interval < 0 {
+			return errors.New("Statistics' interval can't be negative")
+		}
 		return nil
 	}
 	err := app.Run(os.Args)
 	if err != nil {
 		fmt.Printf("An error occurred while trying to parse options: %v\n", err)
 		fmt.Print("Aborting...")
+		return
+	}
+	// Using termination as a flag to terminate the script (if not set)
+	// It won't be set, for example, if the user calls the --help subcommand
+	if termination == "" {
 		return
 	}
 	// **** Actual server ****
@@ -111,7 +126,7 @@ func main() {
 	go gracefulShutdown(exit, cancel, listener)
 	// **** Handler ****
 	// For periodic printing of statistics
-	ticker := time.Tick(time.Second * 10)
+	ticker := time.Tick(time.Second * time.Duration(interval))
 	// Coordination channels
 	intInput := make(chan int)
 	processChan := tracker.ProcessNumber(ctx, intInput)
@@ -119,8 +134,6 @@ func main() {
 	logger.StreamWrite(ctx, processChan)
 	for {
 		select {
-		case <-ticker:
-			tracker.PrintStatistics()
 		case <-ctx.Done():
 			fmt.Println("Termination found, exiting...")
 			return
@@ -128,7 +141,7 @@ func main() {
 			// Handling connections
 			conn, err := listener.Accept()
 			if err != nil {
-				fmt.Printf("An error occurred while accepting connection: %v\n", err)
+				fmt.Printf("The server stopped accepting connections (%v) \n", err)
 				return
 			}
 			// Processing connection
@@ -137,22 +150,28 @@ func main() {
 				scanner := bufio.NewScanner(conn)
 				// Reading each client's input
 				for scanner.Scan() {
-					input := scanner.Text()
-					if checker.CheckTermination(input) {
-						// Cancelling global context, connection and server
-						cancel()
-						conn.Close()
-						listener.Close()
-						return
-					}
-					if checker.ValidateInput(input) {
-						value, err := strconv.Atoi(input)
-						// Should be unreachable (given the ValidateInput)
-						if err != nil {
-							fmt.Printf("An error occurred while processing req: %s. Err: %v", input, err)
+					select {
+					// Print statistics every 10 seconds
+					case <-ticker:
+						tracker.PrintStatistics()
+					default:
+						input := scanner.Text()
+						if checker.CheckTermination(input) {
+							// Cancelling global context, connection and server
+							cancel()
+							conn.Close()
+							listener.Close()
 							return
 						}
-						intInput <- value
+						if checker.ValidateInput(input) {
+							value, err := strconv.Atoi(input)
+							// Should be unreachable (given the ValidateInput)
+							if err != nil {
+								fmt.Printf("An error occurred while processing req: %s. Err: %v", input, err)
+								return
+							}
+							intInput <- value
+						}
 					}
 				}
 			}()

@@ -25,7 +25,9 @@ func NewNumberTracker(maxCapacity int) (*NumberTracker, error) {
 	if maxCapacity < 0 {
 		return numTracker, BadMaxCapacity
 	}
-	numTracker.KnownNumbers = make([]int, maxCapacity)
+	// Adding one to account for the maximum number possible
+	// 999999999 in the default example
+	numTracker.KnownNumbers = make([]int, maxCapacity+1)
 	numTracker.Stats = &Statistics{}
 	return numTracker, nil
 }
