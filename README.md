@@ -50,11 +50,11 @@ For a detailed list of the parameters, you can run `./newrelictest --help` (`./n
 ```
 NAME:
    Number logger - Writes numbers to defined log file.
-               Numbers can have up to the max number
-               of digits defined by the user: 9 by default.
-               When the termination ("terminate") keyword is prompted,
-               the program will attempt to shutdown gracefully.
-               This termination keyword can be changed on start (see --help)
+                   Numbers can have up to the max number
+                   of digits defined by the user: 9 by default.
+                   When the termination ("terminate") keyword is prompted,
+                   the program will attempt to shutdown gracefully.
+                   This termination keyword can be changed on start (see --help)
 
 USAGE:
    newrelictest [global options] command [command options] [arguments...]
@@ -67,10 +67,10 @@ GLOBAL OPTIONS:
    --append, -a                   Whether to append to existing log file or recreate on start
    --logfile value, -l value      Log file's path where the inputs would be written (default: "./numbers.log")
    --termination value, -t value  Terminate keyword, for shutting down the server (default: "terminate")
-   --digits value, -d value       Max number of digits permitted for int input (default: 9)
+   --digits value, -d value       Max number of digits permitted for int input (max: 9) (default: 9)
    --interval value, -i value     Show statistics every * seconds (default: 10)
    --maxconn value, -c value      Max number of concurrent connections allowed (default: 5)
-   --help, -h                     show help
+   --help, -h
 ```
 
 ## Testing
@@ -124,5 +124,5 @@ func main() {
 
 - Each input from a client ends in a carriage character (new-line)
 - On shutdown, it's possible that the last few messages received won't be written to the log file.
-    When the global context is canceled, the first routine receiving the signal will close the file.
+    (When the global context is canceled, the first routine receiving the signal will close the file.)
 
