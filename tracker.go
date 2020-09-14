@@ -2,34 +2,23 @@ package main
 
 import (
 	"context"
-	"errors"
 	"strconv"
 	"sync"
 )
-
-var BadMaxCapacity = errors.New("Max Capacity for Number Tracker can't be negative")
 
 // Keeps a set of processed numbers
 // and statistics book
 type NumberTracker struct {
 	sync.RWMutex
-	KnownNumbers []byte
+	KnownNumbers map[int]byte
 	Stats        *Statistics
 }
 
 // Creates a new NumberTracker.
-// maxCapacity should be the maximum possible number
-// that can be currently known by the tracker
-func NewNumberTracker(maxCapacity int) (*NumberTracker, error) {
-	numTracker := &NumberTracker{}
-	if maxCapacity < 0 {
-		return numTracker, BadMaxCapacity
-	}
-	// Adding one to account for the maximum number possible
-	// 999999999 in the default example (indexing starts at 0)
-	numTracker.KnownNumbers = make([]byte, maxCapacity+1)
-	numTracker.Stats = &Statistics{}
-	return numTracker, nil
+// It contains a set-book for known, found numbers,
+// and a Statistics tracker.
+func NewNumberTracker() *NumberTracker {
+	return &NumberTracker{KnownNumbers: make(map[int]byte), Stats: &Statistics{}}
 }
 
 // Processes a number, validates and passes it on to a channel
@@ -37,7 +26,6 @@ func NewNumberTracker(maxCapacity int) (*NumberTracker, error) {
 func (n *NumberTracker) ProcessNumber(ctx context.Context,
 	inputStream <-chan int) <-chan string {
 	output := make(chan string)
-	numSetLength := len(n.KnownNumbers)
 	go func() {
 		defer close(output)
 		for input := range inputStream {
@@ -45,8 +33,7 @@ func (n *NumberTracker) ProcessNumber(ctx context.Context,
 			case <-ctx.Done():
 				return
 			default:
-				valid := input >= 0 && input < numSetLength
-				if valid {
+				if input >= 0 {
 					if n.checkUniqueness(input) {
 						// Marking it as seen
 						n.registerNumber(input)

@@ -2,19 +2,12 @@ package main
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type newNumberTrackerCase struct {
-	Name    string
-	Cap     int
-	Errored bool
-}
 
 type processNumberCase struct {
 	Name     string
@@ -26,52 +19,14 @@ type processNumberCase struct {
 }
 
 func TestNumberTracker(t *testing.T) {
-	t.Run("New Number Tracker", func(t *testing.T) {
-		genericError := "Got: %v, Expected: %v"
-		testCases := []newNumberTrackerCase{
-			{
-				Name: "Positive cap",
-				Cap:  999999999,
-			},
-			{
-				Name:    "Negative cap",
-				Cap:     -123,
-				Errored: true,
-			},
-		}
-		for _, tc := range testCases {
-			t.Run(tc.Name, func(t *testing.T) {
-				tracker, err := NewNumberTracker(tc.Cap)
-				errored := err != nil
-				// It will stop evaluation if this fails
-				require.True(t, tc.Errored == errored, genericError, errored, tc.Errored)
-				if errored {
-					assert.True(t, errors.Is(err, BadMaxCapacity), "Expected BadMaxCapacity error, got %v", err)
-				} else {
-					maxCap := len(tracker.KnownNumbers)
-					// We add because indexing starts at 0
-					assert.True(t, maxCap == tc.Cap+1, genericError, maxCap, tc.Cap)
-				}
-			})
-		}
-	})
-
 	t.Run("Process Number", func(t *testing.T) {
-		tracker, err := NewNumberTracker(999999999)
-		if err != nil {
-			t.Error(err)
-		}
+		tracker := NewNumberTracker()
 		genericError := "Got: %v, Expected: %v"
 		testCases := []processNumberCase{
 			{
 				Name:     "Canceled context",
 				Canceled: true,
 				Inbound:  100,
-			},
-			{
-				Name:    "Ignored overflown int",
-				Inbound: 1000000000,
-				Ignored: true,
 			},
 			{
 				Name:    "Ignored negative int",

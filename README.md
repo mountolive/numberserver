@@ -14,14 +14,12 @@ The server will prompt statistics to STDOUT every 10 seconds (by default, this i
 Example output (every 10 seconds):
 ```
 Starting number server. Welcome!
-Received 0 unique numbers, 0 duplicates. Unique totals: 0
-Received 443007 unique numbers, 1329338 duplicates. Unique totals: 443007
-Received 731672 unique numbers, 3372769 duplicates. Unique totals: 1174679
-Received 711834 unique numbers, 2852898 duplicates. Unique totals: 1886513
-Received 701727 unique numbers, 2814478 duplicates. Unique totals: 2588240
-Received 678692 unique numbers, 2724788 duplicates. Unique totals: 3266932
-Received 701961 unique numbers, 2820704 duplicates. Unique totals: 3968893
-Received 678127 unique numbers, 2726743 duplicates. Unique totals: 4647020
+Received 492203 unique numbers, 1969333 duplicates (Total processed: 2461536). Unique totals: 492203
+Received 640896 unique numbers, 2566315 duplicates (Total processed: 3207211). Unique totals: 1133099
+Received 636761 unique numbers, 2551738 duplicates (Total processed: 3188499). Unique totals: 1769860
+Received 638486 unique numbers, 2560362 duplicates (Total processed: 3198848). Unique totals: 2408346
+Received 619657 unique numbers, 2487099 duplicates (Total processed: 3106756). Unique totals: 3028003
+
 ```
 
 It's written in [Go](https://golang.org/).
@@ -126,4 +124,5 @@ func main() {
 
 - Each input from a client ends in a carriage character (new-line)
 - On shutdown, it's possible that the last few messages received won't be written to the log file.
+    When the global context is canceled, the first routine receiving the signal will close the file.
 

@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/urfave/cli"
@@ -20,11 +19,11 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "Number logger"
 	app.Usage = `Writes numbers to defined log file.
-               Numbers can have up to the max number
-							 of digits defined by the user: 9 by default.
-							 When the termination ("terminate") keyword is prompted,
-							 the program will attempt to shutdown gracefully.
-							 This termination keyword can be changed on start (see --help)`
+                   Numbers can have up to the max number
+							     of digits defined by the user: 9 by default.
+							     When the termination ("terminate") keyword is prompted,
+							     the program will attempt to shutdown gracefully.
+							     This termination keyword can be changed on start (see --help)`
 	app.Flags = []cli.Flag{
 		&cli.IntFlag{
 			Name:  "port, p",
@@ -48,7 +47,7 @@ func main() {
 		&cli.IntFlag{
 			Name:  "digits, d",
 			Value: 9,
-			Usage: "Max number of digits permitted for int input",
+			Usage: "Max number of digits permitted for int input (max: 9)",
 		},
 		&cli.IntFlag{
 			Name:  "interval, i",
@@ -119,18 +118,9 @@ func main() {
 	checker.SetTermination(termination)
 	checker.SetNumLimit(digits)
 	// Creating Number Tracker
-	maxCapacity, err := strconv.Atoi(strings.Repeat("9", digits))
-	if err != nil {
-		fmt.Printf("An error occurred when trying to create number tracker's limit: %v\n", err)
-		fmt.Println("Aborting...")
-		return
-	}
-	tracker, err := NewNumberTracker(maxCapacity)
-	if err != nil {
-		fmt.Printf("An error occurred when trying to create number tracker: %v\n", err)
-		fmt.Println("Aborting...")
-		return
-	}
+	tracker := NewNumberTracker()
+	// Print final statistics on exit
+	defer tracker.PrintStatistics()
 	// Global context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -170,11 +160,18 @@ func main() {
 			// Handling connection
 			go func() {
 				defer conn.Close()
+				// Releasing connection's place in the queue
+				defer func() { <-rateLimiter }()
 				scanner := bufio.NewScanner(conn)
 				// Reading each client's input
 				for scanner.Scan() {
 					select {
-					// Print statistics every 10 seconds
+					// Checking context per connection
+					case <-ctx.Done():
+						fmt.Printf("Closing connection: %v\n", ctx.Err())
+						closeAndFreeResources(conn, listener)
+						return
+					// Print statistics every 10 (or interval value) seconds
 					case <-ticker:
 						tracker.PrintStatistics()
 					default:
@@ -182,10 +179,7 @@ func main() {
 						if checker.CheckTermination(input) {
 							// Cancelling global context, connection and server
 							cancel()
-							conn.Close()
-							listener.Close()
-							// Print statistics on exit
-							tracker.PrintStatistics()
+							closeAndFreeResources(conn, listener)
 							return
 						}
 						if checker.ValidateInput(input) {
@@ -197,16 +191,20 @@ func main() {
 							}
 							intInput <- value
 						} else {
-							// If not conforming close connection
-							conn.Close()
+							// This will close connection on exit
+							// (see deferred at the beginning of the goroutine)
+							return
 						}
 					}
 				}
-				// Releasing connection's place in the queue
-				<-rateLimiter
 			}()
 		}
 	}
+}
+
+func closeAndFreeResources(conn net.Conn, listener net.Listener) {
+	conn.Close()
+	listener.Close()
 }
 
 // Closes app resources for cleaner shutdown

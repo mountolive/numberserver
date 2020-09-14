@@ -20,8 +20,8 @@ type Statistics struct {
 func (s *Statistics) PrintCurrent() {
 	s.Lock()
 	defer s.Unlock()
-	fmt.Printf("Received %d unique numbers, %d duplicates. "+
-		"Unique totals: %d \n", s.Received, s.Duplicates, s.Total)
+	fmt.Printf("Received %d unique numbers, %d duplicates (Total processed: %d). "+
+		"Unique totals: %d \n", s.Received, s.Duplicates, s.Received+s.Duplicates, s.Total)
 	s.Received = 0
 	s.Duplicates = 0
 }

@@ -52,7 +52,7 @@ func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) err
 	// Checking context before opening file
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("Context passed to StreamWriter is cancelled: %v", ctx.Err())
+		return fmt.Errorf("Context passed to StreamWriter is canceled: %v", ctx.Err())
 	default:
 		if l.appender {
 			// Appending existing file, creating if it doesn't exist
@@ -73,10 +73,7 @@ func (l *Logger) StreamWrite(ctx context.Context, streamLines <-chan string) err
 		for line := range streamLines {
 			select {
 			case <-ctx.Done():
-				// Attempting writing lastly received line
-				fmt.Println("Canceled writing")
-				fmt.Println("Writing last input before exiting")
-				logUtil.Println(line)
+				fmt.Printf("Canceled writing: %v \n", ctx.Err())
 				return
 			default:
 				logUtil.Println(line)

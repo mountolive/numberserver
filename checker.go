@@ -18,8 +18,7 @@ type NumberChecker struct {
 	numLimit    int
 }
 
-// Creates a NumberChecker with Termination string == "terminate"
-// (and includes carriage) and NumLimit == 9
+// Creates a NumberChecker with Termination string == "terminate" and NumLimit == 9
 func NewDefaultNumberChecker() *NumberChecker {
 	return &NumberChecker{termination: "terminate", numLimit: 9}
 }
