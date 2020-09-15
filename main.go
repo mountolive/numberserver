@@ -169,7 +169,7 @@ func main() {
 					// Checking context per connection
 					case <-ctx.Done():
 						fmt.Printf("Closing connection: %v\n", ctx.Err())
-						closeAndFreeResources(conn, listener)
+						finishServer(conn, listener)
 						return
 					// Print statistics every 10 (or interval value) seconds
 					case <-ticker:
@@ -179,7 +179,7 @@ func main() {
 						if checker.CheckTermination(input) {
 							// Cancelling global context, connection and server
 							cancel()
-							closeAndFreeResources(conn, listener)
+							finishServer(conn, listener)
 							return
 						}
 						if checker.ValidateInput(input) {
@@ -202,7 +202,8 @@ func main() {
 	}
 }
 
-func closeAndFreeResources(conn net.Conn, listener net.Listener) {
+// Closes current connection and, ultimately, the listener
+func finishServer(conn net.Conn, listener net.Listener) {
 	conn.Close()
 	listener.Close()
 }

@@ -10,7 +10,8 @@ import (
 // and statistics book
 type NumberTracker struct {
 	sync.RWMutex
-	KnownNumbers map[int]byte
+	// Max value of Uint32 = 4294967295
+	KnownNumbers map[uint32]byte
 	Stats        *Statistics
 }
 
@@ -18,7 +19,7 @@ type NumberTracker struct {
 // It contains a set-book for known, found numbers,
 // and a Statistics tracker.
 func NewNumberTracker() *NumberTracker {
-	return &NumberTracker{KnownNumbers: make(map[int]byte), Stats: &Statistics{}}
+	return &NumberTracker{KnownNumbers: make(map[uint32]byte), Stats: &Statistics{}}
 }
 
 // Processes a number, validates and passes it on to a channel
@@ -34,9 +35,10 @@ func (n *NumberTracker) ProcessNumber(ctx context.Context,
 				return
 			default:
 				if input >= 0 {
-					if n.checkUniqueness(input) {
+					uintVal := uint32(input)
+					if n.checkUniqueness(uintVal) {
 						// Marking it as seen
-						n.registerNumber(input)
+						n.registerNumber(uintVal)
 						// passing it on
 						output <- strconv.Itoa(input)
 						// Increasing unique received count
@@ -56,7 +58,7 @@ func (n *NumberTracker) PrintStatistics() {
 	n.Stats.PrintCurrent()
 }
 
-func (n *NumberTracker) registerNumber(input int) {
+func (n *NumberTracker) registerNumber(input uint32) {
 	// Locking reading for consistency
 	// Any subsequent read will have the proper state
 	n.RLock()
@@ -64,7 +66,7 @@ func (n *NumberTracker) registerNumber(input int) {
 	n.KnownNumbers[input] = 1
 }
 
-func (n *NumberTracker) checkUniqueness(input int) bool {
+func (n *NumberTracker) checkUniqueness(input uint32) bool {
 	// Locking writing for consistency
 	n.Lock()
 	defer n.Unlock()
