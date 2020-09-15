@@ -11,7 +11,7 @@ import (
 type NumberTracker struct {
 	sync.RWMutex
 	// Max value of Uint32 = 4294967295
-	KnownNumbers map[uint32]byte
+	KnownNumbers map[uint32]bool
 	Stats        *Statistics
 }
 
@@ -19,7 +19,7 @@ type NumberTracker struct {
 // It contains a set-book for known, found numbers,
 // and a Statistics tracker.
 func NewNumberTracker() *NumberTracker {
-	return &NumberTracker{KnownNumbers: make(map[uint32]byte), Stats: &Statistics{}}
+	return &NumberTracker{KnownNumbers: make(map[uint32]bool), Stats: &Statistics{}}
 }
 
 // Processes a number, validates and passes it on to a channel
@@ -63,12 +63,12 @@ func (n *NumberTracker) registerNumber(input uint32) {
 	// Any subsequent read will have the proper state
 	n.RLock()
 	defer n.RUnlock()
-	n.KnownNumbers[input] = 1
+	n.KnownNumbers[input] = true
 }
 
 func (n *NumberTracker) checkUniqueness(input uint32) bool {
 	// Locking writing for consistency
 	n.Lock()
 	defer n.Unlock()
-	return n.KnownNumbers[input] == 0
+	return !n.KnownNumbers[input]
 }
