@@ -119,8 +119,6 @@ func main() {
 	checker.SetNumLimit(digits)
 	// Creating Number Tracker
 	tracker := NewNumberTracker()
-	// Print final statistics on exit
-	defer tracker.PrintStatistics()
 	// Global context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -132,7 +130,19 @@ func main() {
 
 	// **** Handler ****
 	// For periodic printing of statistics (interval is defined as flag at entrance)
+	// Statistics
 	ticker := time.Tick(time.Second * time.Duration(interval))
+	// Print statistics every (interval) seconds
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker:
+				tracker.PrintStatistics()
+			}
+		}
+	}()
 	// Coordination channels
 	intInput := make(chan int)
 	defer close(intInput)
@@ -143,62 +153,56 @@ func main() {
 	// Writing to logfile
 	logger.StreamWrite(ctx, processChan)
 	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("Termination found, exiting...")
+		// Check-in to the rateLimiter (this will block if the queue is full)
+		// Will be cleaned out on exit
+		rateLimiter <- struct{}{}
+		// Accepting connections
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Printf("The server stopped accepting connections (%v) \n", err)
 			return
-		default:
-			// Check-in to the rateLimiter (this will block if the queue is full)
-			// Will be cleaned out on exit
-			rateLimiter <- struct{}{}
-			// Accepting connections
-			conn, err := listener.Accept()
-			if err != nil {
-				fmt.Printf("The server stopped accepting connections (%v) \n", err)
-				return
-			}
-			// Handling connection
-			go func() {
-				defer conn.Close()
-				// Releasing connection's place in the queue
-				defer func() { <-rateLimiter }()
-				scanner := bufio.NewScanner(conn)
-				// Reading each client's input
-				for scanner.Scan() {
-					select {
-					// Checking context per connection
-					case <-ctx.Done():
-						fmt.Printf("Closing connection: %v\n", ctx.Err())
+		}
+		// Handling connection
+		go func() {
+			defer conn.Close()
+			// Releasing connection's place in the queue
+			defer func() { <-rateLimiter }()
+			scanner := bufio.NewScanner(conn)
+			// Reading each client's input
+			for scanner.Scan() {
+				select {
+				// Checking context per connection
+				case <-ctx.Done():
+					fmt.Printf("Closing connection: %v\n", ctx.Err())
+					finishServing(conn, listener)
+					return
+				// Print statistics every 10 (or interval value) seconds
+				case <-ticker:
+					tracker.PrintStatistics()
+				default:
+					input := scanner.Text()
+					if checker.CheckTermination(input) {
+						// Cancelling global context, connection and server
+						cancel()
 						finishServing(conn, listener)
 						return
-					// Print statistics every 10 (or interval value) seconds
-					case <-ticker:
-						tracker.PrintStatistics()
-					default:
-						input := scanner.Text()
-						if checker.CheckTermination(input) {
-							// Cancelling global context, connection and server
-							cancel()
-							finishServing(conn, listener)
+					}
+					if checker.ValidateInput(input) {
+						value, err := strconv.Atoi(input)
+						// Should be unreachable (given the ValidateInput)
+						if err != nil {
+							fmt.Printf("An error occurred while processing req: %s. Err: %v", input, err)
 							return
 						}
-						if checker.ValidateInput(input) {
-							value, err := strconv.Atoi(input)
-							// Should be unreachable (given the ValidateInput)
-							if err != nil {
-								fmt.Printf("An error occurred while processing req: %s. Err: %v", input, err)
-								return
-							}
-							intInput <- value
-						} else {
-							// This will close connection on exit
-							// (see deferred at the beginning of the goroutine)
-							return
-						}
+						intInput <- value
+					} else {
+						// This will close connection on exit
+						// (see deferred at the beginning of the goroutine)
+						return
 					}
 				}
-			}()
-		}
+			}
+		}()
 	}
 }
 
