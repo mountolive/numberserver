@@ -176,9 +176,6 @@ func main() {
 					fmt.Printf("Closing connection: %v\n", ctx.Err())
 					finishServing(conn, listener)
 					return
-				// Print statistics every 10 (or interval value) seconds
-				case <-ticker:
-					tracker.PrintStatistics()
 				default:
 					input := scanner.Text()
 					if checker.CheckTermination(input) {
