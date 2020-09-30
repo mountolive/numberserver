@@ -1,4 +1,4 @@
-module github.com/mountolive/newrelictest
+module github.com/mountolive/numberserver
 
 go 1.14
 

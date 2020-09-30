@@ -1,4 +1,4 @@
-# New Relic Backend Test
+# Number Server
 
 The `number server` listed in this repository receives numbers and logs them into a log file 
 (the path can be defined on start). A termination keyword can be set on start of the script. The server
@@ -32,7 +32,7 @@ It's written in [Go](https://golang.org/).
 
 First, clone this repository:
 
-`git clone git@github.com:mountolive/newrelictest.git`
+`git clone git@github.com:mountolive/numberserver.git`
 
 Build the project:
 
@@ -40,12 +40,12 @@ Build the project:
 
 This will create the script that would start the server, it should have execution permissions:
 
-`./newrelictest`, or `./newrelictest.exe` for windows.
+`./numberserver`, or `./numberserver.exe` for windows.
 
 ## Usage
 
 The script allows for some initial customization of the parameters which the server should use.
-For a detailed list of the parameters, you can run `./newrelictest --help` (`./newrelictest.exe --help` on windows). This will prompt the following:
+For a detailed list of the parameters, you can run `./numberserver --help` (`./numberserver.exe --help` on windows). This will prompt the following:
 
 ```
 NAME:
@@ -57,7 +57,7 @@ NAME:
                    This termination keyword can be changed on start (see --help)
 
 USAGE:
-   newrelictest [global options] command [command options] [arguments...]
+   numberserver [global options] command [command options] [arguments...]
 
 COMMANDS:
    help, h  Shows a list of commands or help for one command
